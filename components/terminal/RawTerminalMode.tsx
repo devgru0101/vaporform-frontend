@@ -188,7 +188,7 @@ export function RawTerminalMode({ workspaceId, projectId }: RawTerminalModeProps
           if (fitAddon && isMountedRef.current) {
             try {
               fitAddon.fit();
-              console.log('[Terminal] Initial fit to:', terminal.cols, 'x', terminal.rows);
+              console.log('[Terminal] Initial fit to:', terminal?.cols, 'x', terminal?.rows);
             } catch (err) {
               console.error('[Terminal] Fit error:', err);
             }
@@ -303,10 +303,10 @@ export function RawTerminalMode({ workspaceId, projectId }: RawTerminalModeProps
                   if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({
                       type: 'resize',
-                      cols: terminal.cols,
-                      rows: terminal.rows,
+                      cols: terminal?.cols,
+                      rows: terminal?.rows,
                     }));
-                    console.log('[Terminal] Resized to:', terminal.cols, 'x', terminal.rows);
+                    console.log('[Terminal] Resized to:', terminal?.cols, 'x', terminal?.rows);
                   }
                 }, 100);
               }

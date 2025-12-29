@@ -1,0 +1,29 @@
+
+> vaporform-frontend@0.1.0 dev
+> next dev --turbopack -H 0.0.0.0
+
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled middleware in 492ms
+ ✓ Ready in 2.3s
+Clerk: Refreshing the session token resulted in an infinite redirect loop. This usually means that your Clerk instance keys do not match - make sure to copy the correct publishable and secret keys from the Clerk dashboard.
+ ○ Compiling / ...
+ ✓ Compiled / in 5.7s
+ GET / 200 in 6710ms
+ ⚠ Cross origin request detected from 192.168.1.236 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ ✓ Compiled /favicon.ico in 464ms
+ POST / 200 in 201ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 908ms
+ HEAD / 200 in 249ms
+ GET / 200 in 324ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 306ms
+ POST / 200 in 105ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1183ms
+ GET /dashboard 200 in 1319ms
+[?25h

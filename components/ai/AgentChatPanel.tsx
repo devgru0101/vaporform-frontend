@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable */
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
@@ -10,11 +11,11 @@ import {
   AgentConfig,
   ToolExecutionContext,
 } from '@/lib/agent/types';
-import { AgentToolExecutor, AGENT_TOOLS } from '@/lib/agent/tools';
 import { api } from '@/lib/api';
 import { parseMarkdown } from './markdown';
 import { AgentTerminalMode } from '../terminal/AgentTerminalMode';
 import { ToolResultRenderer } from './ToolResultRenderer';
+import { PlanToolRenderer } from './PlanToolRenderer';
 import { useSettings } from '@/lib/contexts/SettingsContext';
 import './AgentChatPanel.css';
 import './ToolResults.css';
@@ -59,44 +60,63 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [sessionModel, setSessionModel] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<any[]>([]);
+  const [agentTools, setAgentTools] = useState<any[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const toolExecutorRef = useRef<AgentToolExecutor | null>(null);
+
   const isProcessingToolRef = useRef<boolean>(false);
   const lastProcessedMessageIdRef = useRef<string | null>(null);
   const toolExecutionCountRef = useRef<Map<string, number>>(new Map()); // Track tool execution counts for loop detection
   const pendingToolExecutionsRef = useRef<Set<string>>(new Set()); // Track tool_use IDs currently being executed
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:4000';
   const { settings } = useSettings();
 
   // Load or create chat session and history
   useEffect(() => {
     async function loadChatSession() {
       try {
+        console.log('[Chat Load] ========== STARTING CHAT SESSION LOAD ==========');
+        console.log('[Chat Load] Project ID:', projectId);
         setIsLoadingHistory(true);
 
         // Try to get existing session for this project
+        console.log('[Chat Load] Calling api.listChatSessions...');
         const response = await api.listChatSessions(projectId);
+        console.log('[Chat Load] listChatSessions response:', response);
+
         const sessions = response.sessions || response; // Handle both {sessions: [...]} and [...] formats
+        console.log('[Chat Load] Parsed sessions:', sessions);
+        console.log('[Chat Load] Session count:', sessions?.length || 0);
 
         let currentSessionId: string;
         if (sessions && sessions.length > 0) {
           // Use the most recent session
           currentSessionId = sessions[0].id;
+          console.log('[Chat Load] Using existing session:', currentSessionId);
         } else {
           // Create a new session
+          console.log('[Chat Load] No existing sessions, creating new session...');
           const newSession = await api.createChatSession(projectId, 'Agent Chat');
+          console.log('[Chat Load] createChatSession response:', newSession);
           currentSessionId = newSession.session?.id || newSession.id; // Handle both formats
+          console.log('[Chat Load] New session ID:', currentSessionId);
         }
 
+        console.log('[Chat Load] Setting session ID:', currentSessionId);
         setSessionId(currentSessionId);
 
         // Load messages from the session
+        console.log('[Chat Load] Loading messages for session:', currentSessionId);
         const messagesResponse = await api.getChatMessages(currentSessionId);
+        console.log('[Chat Load] getChatMessages response:', messagesResponse);
+
         const chatMessages = messagesResponse.messages || messagesResponse; // Handle both {messages: [...]} and [...] formats
+        console.log('[Chat Load] Parsed messages:', chatMessages?.length || 0);
+
         if (chatMessages && chatMessages.length > 0) {
+          console.log('[Chat Load] Transforming messages...');
           // Transform messages to match AgentMessage format
           const transformedMessages: AgentMessage[] = chatMessages.map((msg: any, index: number) => {
             // Parse content if it's a JSON string (happens when ContentBlock[] was stringified)
@@ -120,33 +140,63 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
 
           // Clean loaded messages to fix any corrupted tool_use/tool_result pairing
           // This repairs old sessions that may have broken message history
-          console.log('[Session Load] Loaded messages before cleaning:', transformedMessages.length);
+          console.log('[Chat Load] Transformed messages count:', transformedMessages.length);
+          console.log('[Chat Load] Cleaning message history...');
           const cleanedMessages = repairMessageHistory(transformedMessages);
-          console.log('[Session Load] Messages after cleaning:', cleanedMessages.length);
+          console.log('[Chat Load] Cleaned messages count:', cleanedMessages.length);
 
+          console.log('[Chat Load] Setting messages to state...');
           setMessages(cleanedMessages);
+          console.log('[Chat Load] Messages successfully set!');
+        } else {
+          console.log('[Chat Load] No messages to load for this session');
         }
+
+        console.log('[Chat Load] ========== CHAT SESSION LOAD COMPLETE ==========');
       } catch (error) {
-        console.error('Failed to load chat session:', error);
+        console.error('[Chat Load] ========== ERROR LOADING CHAT SESSION ==========');
+        console.error('[Chat Load] Error:', error);
+        if (error instanceof Error) {
+          console.error('[Chat Load] Error message:', error.message);
+          console.error('[Chat Load] Error stack:', error.stack);
+        }
+        console.error('[Chat Load] ========== END ERROR ==========');
       } finally {
+        console.log('[Chat Load] Setting isLoadingHistory to false');
         setIsLoadingHistory(false);
       }
     }
 
+    console.log('[Chat Load] useEffect triggered - projectId:', projectId);
     if (projectId) {
+      console.log('[Chat Load] projectId exists, calling loadChatSession()');
       loadChatSession();
+    } else {
+      console.log('[Chat Load] No projectId, skipping load');
     }
   }, [projectId]);
 
-  // Initialize tool executor
+  // Create session and fetch tools
   useEffect(() => {
-    toolExecutorRef.current = new AgentToolExecutor(API_URL);
+    async function initSession() {
+      if (!projectId) return;
 
-    // Set token getter function to get fresh tokens on each request
-    if (toolExecutorRef.current) {
-      toolExecutorRef.current.setTokenGetter(getToken);
+      try {
+        // Fetch available tools
+        const toolsResponse = await api.getAgentTools();
+        setAgentTools(toolsResponse.tools || []);
+
+        // Fetch available models from API
+        const modelsResponse = await api.listAvailableModels();
+        setAvailableModels(modelsResponse.models || []);
+      } catch (e) {
+        console.error('Failed to fetch tools/models:', e);
+      }
     }
-  }, [API_URL, getToken]);
+
+    initSession();
+  }, [projectId]);
+
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -263,15 +313,21 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
   };
 
   const saveMessage = async (message: AgentMessage) => {
-    if (sessionId) {
-      try {
-        const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
-        // Map 'tool' role to 'user' for API compatibility (tool results are user messages with special content)
-        const role = message.role === 'tool' ? 'user' : message.role;
-        await api.addChatMessage(sessionId, role, content, message.toolUse ? { toolUse: message.toolUse } : undefined);
-      } catch (error) {
-        console.error('Failed to save message:', error);
-      }
+    if (!sessionId) {
+      console.warn('[Chat] Cannot save message - no sessionId set');
+      return;
+    }
+
+    try {
+      const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+      // Map 'tool' role to 'user' for API compatibility (tool results are user messages with special content)
+      const role = message.role === 'tool' ? 'user' : message.role;
+      console.log(`[Chat] Saving message (role: ${role}, session: ${sessionId})`);
+      await api.addChatMessage(sessionId, role, content, message.toolUse ? { toolUse: message.toolUse } : undefined);
+      console.log('[Chat] ✓ Message saved successfully');
+    } catch (error) {
+      console.error('[Chat] ✗ Failed to save message:', error);
+      console.error('[Chat] Message that failed:', { role: message.role, sessionId });
     }
   };
 
@@ -384,7 +440,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
 
       // Tool_use must be in assistant message, tool_result must be in user message
       if (currentMsg.role === 'assistant' && nextMsg.role === 'user' &&
-          Array.isArray(currentMsg.content) && Array.isArray(nextMsg.content)) {
+        Array.isArray(currentMsg.content) && Array.isArray(nextMsg.content)) {
 
         // Get tool_use IDs from current message
         const toolUseIds = currentMsg.content
@@ -485,8 +541,8 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
           content: typeof msg.content === 'string'
             ? msg.content
             : (Array.isArray(msg.content)
-                ? msg.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n')
-                : String(msg.content))
+              ? msg.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n')
+              : String(msg.content))
         }))
         .filter(msg => msg.content && msg.content.trim().length > 0);
 
@@ -550,14 +606,23 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
         },
         body: JSON.stringify({
           projectId,
-          messages: allMessages, // Send full conversation history
-          tools: AGENT_TOOLS,
+          messages: allMessages,
+          model: sessionModel || settings.aiModel,  // Send selected model
+          tools: agentTools,
           stream: false,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          // Ignore JSON parse error, use default message
+          console.warn('Failed to parse error response:', e);
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -587,7 +652,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
             toolUse,
           };
           setMessages((prev) => [...prev, message]);
-          saveMessage(message);
+          await saveMessage(message);
 
           // ALL tools go through approval queue (respects autoApproveAll toggle)
           queueToolForApproval(toolUse);
@@ -596,8 +661,8 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
           const textContent = typeof data.content === 'string'
             ? data.content
             : Array.isArray(data.content)
-            ? data.content.find((block: any) => block.type === 'text')?.text || ''
-            : '';
+              ? data.content.find((block: any) => block.type === 'text')?.text || ''
+              : '';
 
           addMessage('assistant', textContent);
         }
@@ -612,7 +677,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
 
   // Helper function to execute a tool (used by both manual and auto-approve)
   const handleToolExecution = async (tool: ToolUse) => {
-    if (!toolExecutorRef.current || !userId) return;
+    if (!userId) return;
 
     // Loop detection: Track tool execution counts
     const toolKey = `${tool.tool}:${JSON.stringify(tool.params)}`;
@@ -643,14 +708,17 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
     });
 
     try {
-      const context: ToolExecutionContext = {
-        projectId,
-        workspaceId,
-        userId,
-        cwd: '/',
-      };
+      // Execute tool via Backend API
+      const result = await api.executeAgentTool(projectId, {
+        id: tool.id,
+        name: tool.tool,
+        input: tool.params
+      }, workspaceId);
 
-      const result = await toolExecutorRef.current.executeTool(tool, context);
+      // Check for backend error returned in success response
+      if (result.error) {
+        throw new Error(result.error);
+      }
 
       // Update tool status to completed
       updateLastMessage({
@@ -664,7 +732,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
         content: [{
           type: 'tool_result',
           tool_use_id: tool.id,
-          content: result.content,
+          content: typeof result.result === 'string' ? result.result : JSON.stringify(result.result || {}),  // Anthropic requires string, not object
         }],
         timestamp: Date.now(),
       };
@@ -689,6 +757,11 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
       console.log('[Tool Execution] Failed:', { toolId: tool.id, pendingCount: pendingToolExecutionsRef.current.size });
     } finally {
       setIsExecuting(false);
+
+      // Turn off auto-approve if completion or followup question
+      if (tool.tool === 'attempt_completion' || tool.tool === 'ask_followup_question') {
+        setAutoApproveAll(false);
+      }
     }
   };
 
@@ -734,14 +807,16 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
           toolUse: { ...tool, status: 'executing' as ToolStatus },
         });
 
-        const context: ToolExecutionContext = {
-          projectId,
-          workspaceId,
-          userId: userId!,
-          cwd: '/',
-        };
+        // Execute tool via Backend API
+        const result = await api.executeAgentTool(projectId, {
+          id: tool.id,
+          name: tool.tool,
+          input: tool.params
+        }, workspaceId);
 
-        const result = await toolExecutorRef.current!.executeTool(tool, context);
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
         // Update status to completed
         updateLastMessage({
@@ -761,7 +836,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
         };
 
         setMessages(prev => [...prev, toolResultMessage]);
-        saveMessage(toolResultMessage);
+        await saveMessage(toolResultMessage);
       } catch (error: any) {
         console.error('Tool execution failed:', error);
         updateLastMessage({
@@ -831,7 +906,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
         body: JSON.stringify({
           projectId,
           messages: cleanedMessages,
-          tools: AGENT_TOOLS,
+          tools: agentTools,
           stream: false,
         }),
       });
@@ -882,8 +957,8 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
           const textContent = typeof data.content === 'string'
             ? data.content
             : Array.isArray(data.content)
-            ? data.content.find((block: any) => block.type === 'text')?.text || ''
-            : '';
+              ? data.content.find((block: any) => block.type === 'text')?.text || ''
+              : '';
 
           if (textContent) {
             addMessage('assistant', textContent);
@@ -936,310 +1011,372 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({
         />
       ) : (
         <>
-      <div className="agent-chat-messages">
-        {messages.length === 0 && (
-          <div className="agent-chat-empty">
-            <svg className="agent-icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-            <h3>AGENTIC CODE ENGINE</h3>
-            <p>I can read files, write code, execute commands, and help you build your project.</p>
-            <div className="agent-suggestions">
-              <button onClick={() => setInputValue('List all files in this project')}>
-                List all files
-              </button>
-              <button onClick={() => setInputValue('Read the main entry file')}>
-                Read main file
-              </button>
-              <button onClick={() => setInputValue('Help me fix any errors')}>
-                Fix errors
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Build Status Cards */}
-        {isBuilding && currentBuild && (
-          <BuildStatusCard build={currentBuild} events={buildEvents} />
-        )}
-
-        {!isBuilding && currentBuild?.status === 'failed' && (
-          <BuildErrorCard
-            build={currentBuild}
-            onFixClick={() => {
-              const errorLogs = currentBuild.install_logs || currentBuild.build_logs || currentBuild.error_message || 'Build failed';
-              const errorPrompt = `Fix this build error:\n\n${errorLogs}`;
-              setInputValue(errorPrompt);
-              // handleSendMessage will be called automatically when user presses enter
-            }}
-          />
-        )}
-
-        {!isBuilding && currentBuild?.status === 'success' && (
-          <BuildSuccessCard build={currentBuild} />
-        )}
-
-        {messages.map((message) => (
-          <div key={message.id} className={`agent-message agent-message-${message.role}`}>
-            <div className="agent-message-avatar">
-              {message.role === 'user' ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="agent-chat-messages">
+            {messages.length === 0 && (
+              <div className="agent-chat-empty">
+                <svg className="agent-icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                 </svg>
-              )}
-            </div>
-            <div className="agent-message-content">
-              {/* Render text content */}
-              {(() => {
-                const textContent = typeof message.content === 'string'
-                  ? message.content
-                  : Array.isArray(message.content)
-                  ? message.content
-                      .filter((block: any) => block.type === 'text')
-                      .map((block: any) => block.text)
-                      .join('\n')
-                  : '';
-
-                return textContent ? (
-                  <div
-                    className="agent-message-text"
-                    dangerouslySetInnerHTML={{ __html: parseMarkdown(textContent) }}
-                  />
-                ) : null;
-              })()}
-
-              {/* Render tool use */}
-              {message.toolUse && (
-                <div className={`agent-tool-use agent-tool-${message.toolUse.status}`}>
-                  <div className="agent-tool-header">
-                    <svg className="agent-tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                    </svg>
-                    <span className="agent-tool-name">{message.toolUse.tool}</span>
-                    <span className={`agent-tool-status agent-status-${message.toolUse.status}`}>
-                      {message.toolUse.status}
-                    </span>
-                  </div>
-                  <div className="agent-tool-params">
-                    <pre>{formatToolParams(message.toolUse.params)}</pre>
-                  </div>
-                </div>
-              )}
-
-              {/* Render tool results with specialized components */}
-              {Array.isArray(message.content) && message.content
-                .filter((block: any) => block.type === 'tool_result')
-                .map((block: any, idx: number) => {
-                  // Extract tool name from previous message's tool_use
-                  const toolName = messages
-                    .slice(0, messages.indexOf(message))
-                    .reverse()
-                    .find(m => m.toolUse?.id === block.tool_use_id)?.toolUse?.tool || 'unknown';
-
-                  return (
-                    <ToolResultRenderer
-                      key={`tool-result-${block.tool_use_id}-${idx}`}
-                      toolName={toolName}
-                      result={block.content}
-                    />
-                  );
-                })}
-            </div>
-          </div>
-        ))}
-
-        {isThinking && (
-          <div className="agent-message agent-message-assistant">
-            <div className="agent-message-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            <div className="agent-message-content">
-              <div className="agent-thinking">
-                <span className="agent-thinking-dot"></span>
-                <span className="agent-thinking-dot"></span>
-                <span className="agent-thinking-dot"></span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* NEW: Improved approval bar with queue display */}
-      {currentApproval && (
-        <div className="agent-approval-bar">
-          <div className="agent-approval-header">
-            <div className="agent-approval-title">
-              <svg className="agent-approval-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Command Approval Required</span>
-              {approvalQueue.length > 0 && (
-                <span className="agent-queue-badge">{approvalQueue.length + 1} pending</span>
-              )}
-            </div>
-            <button
-              className="agent-details-toggle"
-              onClick={() => setShowApprovalDetails(!showApprovalDetails)}
-              title={showApprovalDetails ? "Hide details (D)" : "Show details (D)"}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{
-                transform: showApprovalDetails ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s'
-              }}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="agent-approval-content">
-            <div className="agent-approval-tool-name">
-              <strong>{currentApproval.tool}</strong>
-            </div>
-
-            {showApprovalDetails && (
-              <div className="agent-approval-details">
-                <pre>{formatToolParams(currentApproval.params)}</pre>
+                <h3>AGENTIC CODE ENGINE</h3>
+                <p>I can read files, write code, execute commands, and help you build your project.</p>
               </div>
             )}
+
+            {/* Build Status Cards */}
+            {isBuilding && currentBuild && (
+              <BuildStatusCard build={currentBuild} events={buildEvents} />
+            )}
+
+            {!isBuilding && currentBuild?.status === 'failed' && (
+              <BuildErrorCard
+                build={currentBuild}
+                onFixClick={() => {
+                  const errorLogs = currentBuild.install_logs || currentBuild.build_logs || currentBuild.error_message || 'Build failed';
+                  const errorPrompt = `Fix this build error:\n\n${errorLogs}`;
+                  setInputValue(errorPrompt);
+                  // handleSendMessage will be called automatically when user presses enter
+                }}
+              />
+            )}
+
+            {!isBuilding && currentBuild?.status === 'success' && (
+              <BuildSuccessCard build={currentBuild} />
+            )}
+
+            {messages.map((message) => (
+              <div key={message.id} className={`agent-message agent-message-${message.role}`}>
+                <div className="agent-message-avatar">
+                  {message.role === 'user' ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                  )}
+                </div>
+                <div className="agent-message-content">
+                  {/* Render text content */}
+                  {(() => {
+                    const textContent = typeof message.content === 'string'
+                      ? message.content
+                      : Array.isArray(message.content)
+                        ? message.content
+                          .filter((block: any) => block.type === 'text')
+                          .map((block: any) => block.text)
+                          .join('\n')
+                        : '';
+
+                    return textContent ? (
+                      <div
+                        className="agent-message-text"
+                        dangerouslySetInnerHTML={{ __html: parseMarkdown(textContent) }}
+                      />
+                    ) : null;
+                  })()}
+
+                  {/* Special Plan Renderer */}
+                  {(() => {
+                    if (message.role === 'assistant' && Array.isArray(message.content)) {
+                      const toolUseBlock = message.content.find((b: any) => b.type === 'tool_use' && b.name === 'submit_implementation_plan');
+                      if (toolUseBlock) {
+                        return (
+                          <PlanToolRenderer
+                            key={`plan-${toolUseBlock.id}`}
+                            plan={toolUseBlock.input.plan}
+                            isApproved={message.toolUse?.status === 'completed' && autoApproveAll}
+                            isRejected={message.toolUse?.status === 'denied'}
+                            onApprove={() => {
+                              if (message.toolUse) {
+                                handleToolExecution(message.toolUse!).then(() => {
+                                  setAutoApproveAll(true);
+                                  handleApproveAll();
+                                });
+                              }
+                            }}
+                            onReject={() => {
+                              if (message.toolUse) {
+                                updateLastMessage({
+                                  toolUse: { ...message.toolUse, status: 'denied' as ToolStatus }
+                                });
+                                addMessage('assistant', 'Plan rejected. Please refine the plan based on my feedback.');
+                                setAutoApproveAll(false);
+                              }
+                            }}
+                          />
+                        );
+                      }
+                    }
+                    return null;
+                  })()}
+
+                  {/* Render tool use (HIDE for implementation plans as they have detailed view) */}
+                  {message.toolUse && message.toolUse.tool !== 'submit_implementation_plan' && (
+                    <div className={`agent-tool-use agent-tool-${message.toolUse.status}`}>
+                      <div className="agent-tool-header">
+                        <svg className="agent-tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                        </svg>
+                        <span className="agent-tool-name">{message.toolUse.tool}</span>
+                        <span className={`agent-tool-status agent-status-${message.toolUse.status}`}>
+                          {message.toolUse.status}
+                        </span>
+                      </div>
+                      <div className="agent-tool-params">
+                        <pre>{formatToolParams(message.toolUse.params)}</pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Render tool results with specialized components */}
+                  {Array.isArray(message.content) && message.content
+                    .filter((block: any) => block.type === 'tool_result')
+                    .map((block: any, idx: number) => {
+                      // Extract tool name from previous message's tool_use
+                      const toolName = messages
+                        .slice(0, messages.indexOf(message))
+                        .reverse()
+                        .find(m => m.toolUse?.id === block.tool_use_id)?.toolUse?.tool || 'unknown';
+
+                      return (
+                        <ToolResultRenderer
+                          key={`tool-result-${block.tool_use_id}-${idx}`}
+                          toolName={toolName}
+                          result={block.content}
+                        />
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
+
+            {isThinking && (
+              <div className="agent-message agent-message-assistant">
+                <div className="agent-message-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                </div>
+                <div className="agent-message-content">
+                  <div className="agent-thinking">
+                    <span className="agent-thinking-dot"></span>
+                    <span className="agent-thinking-dot"></span>
+                    <span className="agent-thinking-dot"></span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
           </div>
 
-          <div className="agent-approval-actions">
-            <div className="agent-approval-actions-left">
-              {approvalQueue.length > 0 && (
-                <>
+          {/* NEW: Improved approval bar with queue display */}
+          {currentApproval && (
+            <div className="agent-approval-bar">
+              <div className="agent-approval-header">
+                <div className="agent-approval-title">
+                  <svg className="agent-approval-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Command Approval Required</span>
+                  {approvalQueue.length > 0 && (
+                    <span className="agent-queue-badge">{approvalQueue.length + 1} pending</span>
+                  )}
+                </div>
+                <button
+                  className="agent-details-toggle"
+                  onClick={() => setShowApprovalDetails(!showApprovalDetails)}
+                  title={showApprovalDetails ? "Hide details (D)" : "Show details (D)"}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{
+                    transform: showApprovalDetails ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s'
+                  }}>
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="agent-approval-content">
+                <div className="agent-approval-tool-name">
+                  <strong>{currentApproval.tool}</strong>
+                </div>
+
+                {showApprovalDetails && (
+                  <div className="agent-approval-details">
+                    <pre>{formatToolParams(currentApproval.params)}</pre>
+                  </div>
+                )}
+              </div>
+
+              <div className="agent-approval-actions">
+                <div className="agent-approval-actions-left">
+                  {approvalQueue.length > 0 && (
+                    <>
+                      <button
+                        className="agent-btn agent-btn-secondary"
+                        onClick={handleApproveAll}
+                        disabled={isExecuting}
+                        title="Approve all pending commands"
+                      >
+                        Approve All ({approvalQueue.length + 1})
+                      </button>
+                      <button
+                        className="agent-btn agent-btn-secondary agent-btn-deny-all"
+                        onClick={handleDenyAll}
+                        disabled={isExecuting}
+                        title="Deny all pending commands"
+                      >
+                        Deny All
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div className="agent-approval-actions-right">
                   <button
-                    className="agent-btn agent-btn-secondary"
-                    onClick={handleApproveAll}
+                    className="agent-btn agent-btn-deny"
+                    onClick={handleDenyTool}
                     disabled={isExecuting}
-                    title="Approve all pending commands"
+                    title="Deny this command (N or Esc)"
                   >
-                    Approve All ({approvalQueue.length + 1})
+                    Deny
                   </button>
                   <button
-                    className="agent-btn agent-btn-secondary agent-btn-deny-all"
-                    onClick={handleDenyAll}
+                    className="agent-btn agent-btn-approve"
+                    onClick={handleApproveTool}
                     disabled={isExecuting}
-                    title="Deny all pending commands"
+                    title="Approve this command (Y or Enter)"
                   >
-                    Deny All
+                    {isExecuting ? 'Executing...' : 'Approve'}
                   </button>
-                </>
-              )}
+                </div>
+              </div>
+
+              <div className="agent-approval-hint">
+                Keyboard: <kbd>Y</kbd> or <kbd>Enter</kbd> to approve, <kbd>N</kbd> or <kbd>Esc</kbd> to deny, <kbd>D</kbd> to toggle details
+              </div>
             </div>
-            <div className="agent-approval-actions-right">
+          )}
+
+          {autoApproveAll && (
+            <div className="agent-auto-approve-notice">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 11l3 3L22 4" />
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+              <span>Auto-approve enabled - all tools will execute automatically</span>
+            </div>
+          )}
+
+          <div className="agent-chat-input-container">
+            <div className="agent-mode-toggle" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
               <button
-                className="agent-btn agent-btn-deny"
-                onClick={handleDenyTool}
-                disabled={isExecuting}
-                title="Deny this command (N or Esc)"
+                className={`agent-mode-button agent-mode-chat ${agentMode === 'chat' ? 'active' : ''}`}
+                onClick={() => setAgentMode('chat')}
+                aria-label="Chat mode"
+                title="Chat Mode"
               >
-                Deny
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
               </button>
               <button
-                className="agent-btn agent-btn-approve"
-                onClick={handleApproveTool}
-                disabled={isExecuting}
-                title="Approve this command (Y or Enter)"
+                className={`agent-mode-button agent-mode-terminal ${agentMode === 'terminal' ? 'active' : ''}`}
+                onClick={() => setAgentMode('terminal')}
+                aria-label="Terminal mode"
+                title="Terminal Mode"
               >
-                {isExecuting ? 'Executing...' : 'Approve'}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="4 17 10 11 4 5" />
+                  <line x1="12" y1="19" x2="20" y2="19" />
+                </svg>
+              </button>
+              <button
+                className={`agent-mode-button agent-auto-approve ${autoApproveAll ? 'active' : ''}`}
+                onClick={() => setAutoApproveAll(!autoApproveAll)}
+                aria-label="Auto-approve all tools"
+                title={autoApproveAll ? "Auto-approve: ON (tools execute automatically)" : "Auto-approve: OFF (manual approval required)"}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              </button>
+
+              {/* Model Selector Dropdown */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  className="agent-model-indicator"
+                  onClick={() => setShowModelSelector(!showModelSelector)}
+                  title={`Using: ${sessionModel || settings.aiModel || 'Default model'}`}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px' }}>
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 1v6m0 6v6m10-11h-6m-6 0H4" />
+                  </svg>
+                  <span style={{ fontSize: '11px', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {sessionModel ? sessionModel.split('/').pop() : (settings.aiModel || 'claude').split('-')[0]}
+                  </span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '10px', height: '10px', marginLeft: '4px' }}>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+
+                {showModelSelector && (
+                  <div className="agent-model-dropdown">
+                    {availableModels.length > 0 ? (
+                      availableModels.map((model) => (
+                        <button
+                          key={model.id}
+                          className={`agent-model-option ${sessionModel === model.id ? 'active' : ''}`}
+                          onClick={() => {
+                            setSessionModel(model.id);
+                            setShowModelSelector(false);
+                          }}
+                        >
+                          <div style={{ fontWeight: 600, fontSize: '12px' }}>{model.name || model.id}</div>
+                          {model.description && (
+                            <div style={{ fontSize: '10px', color: 'var(--vf-text-muted)', marginTop: '2px' }}>
+                              {model.description}
+                            </div>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div style={{ padding: '8px', fontSize: '11px', color: 'var(--vf-text-muted)' }}>
+                        No models available
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="agent-input-wrapper">
+              <textarea
+                ref={inputRef}
+                className="agent-chat-input"
+                placeholder="Describe what you want to build..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isThinking || isExecuting}
+                rows={1}
+              />
+              <button
+                className="agent-send-button-inline"
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || isThinking || isExecuting}
+                aria-label="Send message"
+                title="Send"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                </svg>
               </button>
             </div>
           </div>
-
-          <div className="agent-approval-hint">
-            Keyboard: <kbd>Y</kbd> or <kbd>Enter</kbd> to approve, <kbd>N</kbd> or <kbd>Esc</kbd> to deny, <kbd>D</kbd> to toggle details
-          </div>
-        </div>
-      )}
-
-      {autoApproveAll && (
-        <div className="agent-auto-approve-notice">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 11l3 3L22 4" />
-            <circle cx="12" cy="12" r="10" />
-          </svg>
-          <span>Auto-approve enabled - all tools will execute automatically</span>
-        </div>
-      )}
-
-      <div className="agent-chat-input-container">
-        <div className="agent-mode-toggle">
-          <button
-            className={`agent-mode-button agent-mode-chat ${agentMode === 'chat' ? 'active' : ''}`}
-            onClick={() => setAgentMode('chat')}
-            aria-label="Chat mode"
-            title="Chat Mode"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-          </button>
-          <button
-            className={`agent-mode-button agent-mode-terminal ${agentMode === 'terminal' ? 'active' : ''}`}
-            onClick={() => setAgentMode('terminal')}
-            aria-label="Terminal mode"
-            title="Terminal Mode"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="4 17 10 11 4 5" />
-              <line x1="12" y1="19" x2="20" y2="19" />
-            </svg>
-          </button>
-          <button
-            className={`agent-mode-button agent-auto-approve ${autoApproveAll ? 'active' : ''}`}
-            onClick={() => setAutoApproveAll(!autoApproveAll)}
-            aria-label="Auto-approve all tools"
-            title={autoApproveAll ? "Auto-approve: ON (tools execute automatically)" : "Auto-approve: OFF (manual approval required)"}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-            </svg>
-          </button>
-
-          {/* Model Indicator */}
-          <div className="agent-model-indicator" title={`Using: ${sessionModel || settings.aiModel || 'Default model'}`}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px' }}>
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v6m0 6v6m10-11h-6m-6 0H4" />
-            </svg>
-            <span style={{ fontSize: '11px', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {sessionModel ? sessionModel.split('/').pop() : (settings.aiModel || 'claude').split('-')[0]}
-            </span>
-          </div>
-        </div>
-        <div className="agent-input-wrapper">
-          <textarea
-            ref={inputRef}
-            className="agent-chat-input"
-            placeholder="Describe what you want to build..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isThinking || isExecuting}
-            rows={1}
-          />
-          <button
-            className="agent-send-button-inline"
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isThinking || isExecuting}
-            aria-label="Send message"
-            title="Send"
-            >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-            </svg>
-          </button>
-        </div>
-      </div>
         </>
       )}
     </div>

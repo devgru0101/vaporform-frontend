@@ -30,7 +30,7 @@ export const ToolResultRenderer: React.FC<ToolResultRendererProps> = ({ toolName
       parsedResult = { content: result, success: true };
     }
   } else {
-    parsedResult = result;
+    parsedResult = result || {};
   }
 
   // Render based on tool type
@@ -44,12 +44,16 @@ export const ToolResultRenderer: React.FC<ToolResultRendererProps> = ({ toolName
       return <CommandResult toolName={toolName} result={parsedResult} />;
 
     case 'read_file':
+    case 'daytona_read_file':
       return <FileReadResult result={parsedResult} />;
 
     case 'write_file':
+    case 'write_to_file':
+    case 'daytona_write_file':
       return <FileWriteResult result={parsedResult} />;
 
     case 'list_directory':
+    case 'daytona_list_files':
       return <DirectoryListResult result={parsedResult} />;
 
     default:
@@ -174,6 +178,21 @@ const FileWriteResult: React.FC<{ result: ToolResult }> = ({ result }) => {
 
 // Directory List Result Component
 const DirectoryListResult: React.FC<{ result: ToolResult }> = ({ result }) => {
+  // Handle different result formats
+  let fileList: Array<{ path: string; size?: number; type?: string }> = [];
+
+  if (result.files && Array.isArray(result.files)) {
+    // Convert string[] to object[] if needed
+    fileList = result.files.map(file =>
+      typeof file === 'string' ? { path: file } : file
+    );
+  } else if (typeof result.files === 'string') {
+    // Handle raw string output from ls
+    fileList = result.files.split('\n')
+      .filter(f => f.trim())
+      .map(f => ({ path: f.trim() }));
+  }
+
   return (
     <div className="tool-result tool-result-directory-list">
       <div className="tool-result-header">
@@ -182,9 +201,9 @@ const DirectoryListResult: React.FC<{ result: ToolResult }> = ({ result }) => {
         </svg>
         <span className="tool-result-title">Directory Contents</span>
       </div>
-      {result.files && result.files.length > 0 ? (
+      {fileList.length > 0 ? (
         <div className="tool-result-file-list">
-          {result.files.map((file, idx) => (
+          {fileList.map((file, idx) => (
             <div key={idx} className="tool-result-file-item">
               <svg className="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />

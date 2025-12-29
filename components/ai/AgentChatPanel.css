@@ -947,3 +947,92 @@
   flex-shrink: 0;
   stroke: var(--vf-accent-primary);
 }
+
+/* Build Error Card Button */
+.build-error-fix-button {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--vf-accent-primary);
+  border: 1px solid var(--vf-accent-primary);
+  color: var(--vf-bg-primary);
+  border-radius: 0;
+  cursor: pointer;
+  font-size: var(--vf-text-xs);
+  font-family: var(--vf-font-display);
+  font-weight: var(--vf-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--vf-transition-fast);
+}
+
+.build-error-fix-button:hover {
+  background: var(--vf-accent-secondary);
+  border-color: var(--vf-accent-secondary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 255, 100, 0.3);
+}
+
+.build-error-fix-button span {
+  font-size: 14px;
+}
+
+/* Model Selector Dropdown */
+.agent-model-dropdown {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  background: var(--vf-bg-secondary);
+  border: 1px solid var(--vf-border-primary);
+  border-radius: 0;
+  min-width: 250px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.agent-model-option {
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--vf-border-primary);
+  color: var(--vf-text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--vf-transition-fast);
+  font-family: var(--vf-font-mono);
+}
+
+.agent-model-option:last-child {
+  border-bottom: none;
+}
+
+.agent-model-option:hover {
+  background: var(--vf-bg-tertiary);
+}
+
+.agent-model-option.active {
+  background: var(--vf-accent-primary);
+  color: var(--vf-bg-primary);
+}
+
+.agent-model-option.active div {
+  color: var(--vf-bg-primary) !important;
+}
+
+/* Make model indicator clickable */
+.agent-model-indicator {
+  cursor: pointer !important;
+  transition: all var(--vf-transition-fast);
+}
+
+.agent-model-indicator:hover {
+  background: var(--vf-bg-tertiary);
+  border-color: var(--vf-accent-primary);
+}

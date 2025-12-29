@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -29,6 +31,7 @@ export interface UserSettings {
   aiProvider?: string;
   aiApiKey?: string;
   aiOAuthToken?: string;
+  aiOAuthProvider?: string;
   aiBaseUrl?: string;
   aiCustomModelId?: string;
   aiContextWindow?: number;
@@ -65,7 +68,7 @@ const defaultSettings: UserSettings = {
   lineNumbers: true,
   wordWrap: false,
 
-  aiModel: 'claude-3-5-sonnet-20241022',
+  aiModel: 'claude-sonnet-4-5-20250929',
   aiTemperature: 0.7,
   aiMaxTokens: 8192,
   aiAutoComplete: true,

@@ -56,6 +56,20 @@ export function useBuildStatus(projectId: string) {
         }
 
         const build = builds[0];
+
+        // Only show recent builds (last 5 minutes) to prevent stale errors from showing
+        const buildAge = Date.now() - new Date(build.created_at).getTime();
+        const MAX_BUILD_AGE_MS = 5 * 60 * 1000; // 5 minutes
+
+        if (buildAge > MAX_BUILD_AGE_MS && build.status === 'failed') {
+          // Don't show old failed builds
+          setCurrentBuild(null);
+          setIsBuilding(false);
+          setBuildEvents([]);
+          setError(null);
+          return;
+        }
+
         setCurrentBuild(build);
 
         const building = build.status === 'building' || build.status === 'pending';

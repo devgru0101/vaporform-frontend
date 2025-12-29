@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -250,7 +252,7 @@ export const AiSection: React.FC = () => {
                 <div className="vf-settings-field-info">
                   <label className="vf-settings-field-label">Connect Account</label>
                   <span className="vf-settings-field-description">
-                    Connect your Claude subscription to use your plan's API access
+                    Connect your Claude subscription to use your plan&apos;s API access
                   </span>
                 </div>
                 <div className="vf-settings-field-control">
@@ -363,19 +365,15 @@ export const AiSection: React.FC = () => {
                   ) : (
                     // Anthropic models (static)
                     <>
-                      <optgroup label="Claude 4 (Latest)">
-                        <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Best - Recommended)</option>
-                        <option value="claude-opus-4-1-20250514">Claude Opus 4.1 (Most Capable)</option>
-                        <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                      <optgroup label="Claude 4.5 (Recommended)">
+                        <option value="claude-sonnet-4-5-20250929">Claude 4.5 Sonnet (New)</option>
+                        <option value="claude-opus-4-5-20251124">Claude 4.5 Opus</option>
                       </optgroup>
-                      <optgroup label="Claude 3.5">
-                        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-                        <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                      <optgroup label="Claude 4">
+                        <option value="claude-opus-4-1-20250805">Claude 4.1 Opus</option>
+                        <option value="claude-sonnet-4-20250522">Claude 4 Sonnet</option>
                       </optgroup>
-                      <optgroup label="Claude 3">
-                        <option value="claude-3-opus-20240229">Claude 3 Opus</option>
-                        <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-                      </optgroup>
+
                     </>
                   )}
                   <optgroup label="Other">
@@ -637,6 +635,6 @@ export const AiSection: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };

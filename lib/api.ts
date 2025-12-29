@@ -13,6 +13,15 @@ export class VaporformAPI {
   private showToast?: ShowToastFn;
   private requestQueue: Array<() => Promise<any>> = [];
   private isProcessingQueue = false;
+  private isInitialized = false;
+  private initPromise: Promise<void>;
+  private initResolve: (() => void) | null = null;
+
+  constructor() {
+    this.initPromise = new Promise<void>((resolve) => {
+      this.initResolve = resolve;
+    });
+  }
 
   /**
    * Set the token getter function (should be called from useAuth hook)
@@ -20,6 +29,14 @@ export class VaporformAPI {
   setTokenGetter(getter: () => Promise<string | null>) {
     console.log('[API] Token getter has been set');
     this.tokenGetter = getter;
+    this.isInitialized = true;
+
+    // Resolve the initialization promise
+    if (this.initResolve) {
+      this.initResolve();
+      this.initResolve = null; // Ensure only resolved once
+    }
+
     // Process any queued requests now that we have a token getter
     this.processQueue();
   }
@@ -57,6 +74,18 @@ export class VaporformAPI {
   }
 
   private async getAuthHeaders(): Promise<Record<string, string>> {
+    // Wait for initialization (race with timeout to prevent infinite hanging)
+    if (!this.isInitialized) {
+      console.log('[API] Waiting for token getter initialization...');
+      // Wait up to 5 seconds for initialization
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('API initialization timeout')), 5000));
+      try {
+        await Promise.race([this.initPromise, timeoutPromise]);
+      } catch (e) {
+        console.warn('[API] Proceeding without token getter after timeout');
+      }
+    }
+
     let token: string | null = null;
 
     if (this.tokenGetter) {
@@ -461,6 +490,28 @@ export class VaporformAPI {
     return response.json();
   }
 
+  async getAgentTools() {
+    const headers = await this.getAuthHeaders();
+    const response = await fetch(`${API_URL}/ai/agent/tools`, { headers });
+    return response.json();
+  }
+
+  async executeAgentTool(projectId: string, toolUse: { id: string; name: string; input: any }, workspaceId?: string) {
+    const headers = await this.getAuthHeaders();
+    const response = await fetch(`${API_URL}/ai/agent/execute-tool`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ projectId, toolUse, workspaceId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
   // Terminal
   async createTerminalSession(projectId: string, workspaceId?: string) {
     const headers = await this.getAuthHeaders();
@@ -704,6 +755,77 @@ export class VaporformAPI {
     const data = await response.json();
     return data.models || [];
   }
+
+  // AI Models
+  async listAvailableModels(): Promise<{ models: any[] }> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.fetchWithErrorHandling(`${API_URL}/ai/models`, {
+      method: 'GET',
+      headers,
+    });
+    const data = await response.json();
+    return data;
+  }
+
+  // Git Operations  
+  async initRepository(projectId: string, defaultBranch: string = 'main'): Promise<{ success: boolean }> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.fetchWithErrorHandling(`${API_URL}/git/init`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ projectId, defaultBranch }),
+    });
+    return response.json();
+  }
+
+  async getHistory(projectId: string, limit: number = 20): Promise<{ commits: any[]; total: number }> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.fetchWithErrorHandling(`${API_URL}/git/history/${projectId}?limit=${limit}`, {
+      method: 'GET',
+      headers,
+    });
+    return response.json();
+  }
+
+  async listBranches(projectId: string): Promise<{ branches: any[] }> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.fetchWithErrorHandling(`${API_URL}/git/branches/${projectId}`, {
+      method: 'GET',
+      headers,
+    });
+    return response.json();
+  }
+
+  async createCommit(projectId: string, message: string, files?: string[]): Promise<{ commit: any }> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.fetchWithErrorHandling(`${API_URL}/git/commit`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ projectId, message, files }),
+    });
+    return response.json();
+  }
+
+  async createBranch(projectId: string, branchName: string): Promise<{ success: boolean }> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.fetchWith ErrorHandling(`${API_URL}/git/branch`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ projectId, branchName }),
+    });
+    return response.json();
+  }
+
+  async checkoutBranch(projectId: string, branchName: string): Promise<{ success: boolean }> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.fetchWithErrorHandling(`${API_URL}/git/checkout`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ projectId, branchName }),
+    });
+    return response.json();
+  }
 }
 
+// Export singleton instance
 export const api = new VaporformAPI();

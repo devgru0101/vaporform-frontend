@@ -1,0 +1,247 @@
+
+> vaporform-frontend@0.1.0 watchdog
+> npx tsx scripts/watchdog.ts
+
+[Frontend Watchdog] Started. Monitoring http://0.0.0.0:3000
+[Frontend Watchdog] Frontend is not running/reachable. Starting...
+[Frontend Watchdog] Starting Next.js dev server...
+
+> vaporform-frontend@0.1.0 dev
+> next dev --turbopack -H 0.0.0.0
+
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled middleware in 488ms
+ ✓ Ready in 2.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 5.6s
+ GET / 200 in 6852ms
+ GET / 200 in 3499ms
+Clerk: Refreshing the session token resulted in an infinite redirect loop. This usually means that your Clerk instance keys do not match - make sure to copy the correct publishable and secret keys from the Clerk dashboard.
+ GET / 200 in 258ms
+ GET / 200 in 358ms
+ ⚠ Cross origin request detected from 192.168.1.236 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ POST / 200 in 159ms
+ ✓ Compiled /favicon.ico in 361ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 778ms
+ GET / 200 in 302ms
+ GET / 200 in 297ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 479ms
+ POST / 200 in 127ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 2.1s
+ GET /dashboard 200 in 2285ms
+ GET / 200 in 247ms
+ GET / 200 in 272ms
+ GET /dashboard 200 in 263ms
+ GET / 200 in 227ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 297ms
+ POST /dashboard 200 in 116ms
+ GET / 200 in 250ms
+ GET / 200 in 269ms
+ GET / 200 in 271ms
+ GET / 200 in 263ms
+ GET / 200 in 296ms
+ GET / 200 in 256ms
+ GET / 200 in 247ms
+ GET / 200 in 273ms
+ GET / 200 in 243ms
+ GET / 200 in 229ms
+ GET / 200 in 263ms
+ GET / 200 in 243ms
+ GET /dashboard 200 in 254ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 391ms
+ POST /dashboard 200 in 144ms
+ ○ Compiling /editor/[projectId] ...
+ ✓ Compiled /editor/[projectId] in 1792ms
+ GET /editor/2 200 in 3026ms
+ GET /editor/2 200 in 385ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 316ms
+ POST /editor/2 200 in 187ms
+ GET /editor/2 200 in 311ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 331ms
+ POST /editor/2 200 in 204ms
+ ✓ Compiled in 200ms
+ ✓ Compiled in 112ms
+ ✓ Compiled in 134ms
+ ✓ Compiled in 144ms
+ ✓ Compiled in 270ms
+ ⨯ ./components/ai/BuildErrorCard.tsx:85:1
+Parsing ecmascript source code failed
+[0m [90m 83 |[39m     [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+ [90m 84 |[39m   )[33m;[39m
+[31m[1m>[22m[39m[90m 85 |[39m }[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m
+ [90m 86 |[39m[0m
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./components/ai/BuildErrorCard.tsx [Client Component Browser]
+    ./components/ai/AgentChatPanel.tsx [Client Component Browser]
+    ./app/editor/[projectId]/page.tsx [Client Component Browser]
+    ./app/editor/[projectId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./components/ai/BuildErrorCard.tsx [Client Component SSR]
+    ./components/ai/AgentChatPanel.tsx [Client Component SSR]
+    ./app/editor/[projectId]/page.tsx [Client Component SSR]
+    ./app/editor/[projectId]/page.tsx [Server Component]
+
+
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 2.5s
+ GET /editor/2 500 in 2980ms
+ GET /favicon.ico 500 in 119ms
+ ✓ Compiled in 176ms
+ ○ Compiling /editor/[projectId] ...
+ ✓ Compiled /editor/[projectId] in 1692ms
+ GET /editor/2 200 in 2603ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 337ms
+ POST /editor/2 200 in 187ms
+ ✓ Compiled in 144ms
+ ✓ Compiled in 149ms
+ ✓ Compiled in 260ms
+ ✓ Compiled in 177ms
+ ✓ Compiled in 181ms
+ ✓ Compiled in 157ms
+ ✓ Compiled in 138ms
+ ✓ Compiled in 183ms
+ ⚠ Fast Refresh had to perform a full reload when ./lib/api.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled /editor/[projectId] in 88ms
+ GET /editor/2 200 in 1133ms
+ GET /editor/2 200 in 1160ms
+ POST /editor/2 200 in 208ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 279ms
+ GET /editor/2 200 in 283ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 313ms
+ POST /editor/2 200 in 202ms
+ ✓ Compiled in 184ms
+ ⚠ Fast Refresh had to perform a full reload when ./lib/api.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /editor/2 200 in 1062ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 340ms
+ POST /editor/2 200 in 177ms
+ GET /editor/2 200 in 364ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 336ms
+ POST /editor/2 200 in 221ms
+ ✓ Compiled in 968ms
+ GET /editor/2 200 in 991ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 338ms
+ POST /editor/2 200 in 164ms
+ ✓ Compiled in 149ms
+ GET /editor/2 200 in 948ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 335ms
+ POST /editor/2 200 in 197ms
+ ✓ Compiled in 188ms
+ ✓ Compiled in 180ms
+ ✓ Compiled /editor/[projectId] in 85ms
+ GET /editor/2 200 in 591ms
+ ✓ Compiled in 167ms
+ ✓ Compiled in 183ms
+ ✓ Compiled in 186ms
+ ✓ Compiled in 162ms
+ ✓ Compiled in 147ms
+ ⚠ Fast Refresh had to perform a full reload when ./lib/api.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled /editor/[projectId] in 86ms
+ GET /editor/2 200 in 1082ms
+ GET /editor/2 200 in 1096ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 328ms
+ POST /editor/2 200 in 216ms
+ GET /editor/2 200 in 338ms
+ POST /editor/2 200 in 191ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 373ms
+ GET /editor/2 200 in 342ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 327ms
+ POST /editor/2 200 in 198ms
+ GET /editor/2 200 in 331ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 325ms
+ POST /editor/2 200 in 205ms
+ GET /editor/2 200 in 322ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 372ms
+ POST /editor/2 200 in 194ms
+ GET /editor/2 200 in 351ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 320ms
+ POST /editor/2 200 in 194ms
+ GET /editor/2 200 in 335ms
+ POST /editor/2 200 in 229ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 376ms
+ GET /editor/2 200 in 357ms
+ POST /editor/2 200 in 193ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 397ms
+ GET /editor/2 200 in 343ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 320ms
+ POST /editor/2 200 in 178ms
+ GET /editor/2 200 in 367ms
+ POST /editor/2 200 in 208ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 388ms
+ GET /editor/2 200 in 355ms
+ POST /editor/2 200 in 126ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 362ms
+ GET /editor/2 200 in 352ms
+ POST /editor/2 200 in 239ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 340ms
+ GET /editor/2 200 in 344ms
+ POST /editor/2 200 in 192ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 385ms
+ GET /editor/2 200 in 343ms
+ POST /editor/2 200 in 125ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 300ms
+ GET /editor/2 200 in 333ms
+ POST /editor/2 200 in 196ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 377ms
+ GET /editor/2 200 in 323ms
+ POST /editor/2 200 in 176ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 394ms
+ GET /editor/2 200 in 351ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 372ms
+ POST /editor/2 200 in 185ms
+ ✓ Compiled / in 69ms
+ GET / 200 in 295ms
+ POST / 200 in 129ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 290ms
+ GET / 200 in 317ms
+ POST / 200 in 103ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 308ms
+ GET /editor/2 200 in 339ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 334ms
+ POST /editor/2 200 in 210ms
+ GET /editor/2 200 in 342ms
+ POST /editor/2 200 in 126ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 301ms
+ GET /editor/2 200 in 337ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 335ms
+ POST /editor/2 200 in 182ms
+ GET /editor/2 200 in 340ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 357ms
+ POST /editor/2 200 in 197ms
+ GET /editor/2 200 in 340ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 327ms
+ POST /editor/2 200 in 189ms
+ GET /editor/2 200 in 327ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 411ms
+ POST /editor/2 200 in 180ms
+ GET /editor/2 200 in 313ms
+ POST /editor/2 200 in 200ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 416ms
+ GET /editor/2 200 in 325ms
+ POST /editor/2 200 in 195ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 402ms
+ GET /editor/2 200 in 345ms
+ POST /editor/2 200 in 239ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 397ms
+ GET /editor/2 200 in 336ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 319ms
+ POST /editor/2 200 in 206ms
+ GET /editor/2 200 in 338ms
+ POST /editor/2 200 in 187ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 391ms
+Killed
+ GET /editor/2 200 in 336ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 311ms
+ POST /editor/2 200 in 195ms

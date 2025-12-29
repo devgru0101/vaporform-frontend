@@ -1,12 +1,20 @@
 'use client';
 
-import { SignInButton } from '@clerk/nextjs';
+import { SignInButton, useAuth } from '@clerk/nextjs';
 
 interface SignInPromptProps {
   message?: string;
 }
 
 export function SignInPrompt({ message = 'Please sign in to continue' }: SignInPromptProps) {
+  const { isSignedIn } = useAuth();
+
+  // Prevent rendering the sign-in button if already signed in
+  // This avoids the "cannot_render_single_session_enabled" error from Clerk
+  if (isSignedIn) {
+    return null;
+  }
+
   return (
     <div style={{
       display: 'flex',
@@ -48,12 +56,12 @@ export function SignInPrompt({ message = 'Please sign in to continue' }: SignInP
             cursor: 'pointer',
             transition: 'background-color 0.2s',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--vf-accent-hover, #4f46e5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--vf-accent, #6366f1)';
-          }}>
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--vf-accent-hover, #4f46e5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--vf-accent, #6366f1)';
+            }}>
             Sign In
           </button>
         </SignInButton>

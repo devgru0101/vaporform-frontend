@@ -29,6 +29,295 @@ function hasTreeChanged(oldNodes: FileNode[], newFiles: any[], path: string): bo
   return oldHash !== newHash;
 }
 
+// File icon component - returns SVG icon based on file type
+function FileIcon({ filename }: { filename: string }) {
+  const ext = filename.split('.').pop()?.toLowerCase();
+
+  // TypeScript
+  if (ext === 'ts' || ext === 'tsx') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#3178C6" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="white">TS</text>
+      </svg>
+    );
+  }
+
+  // JavaScript
+  if (ext === 'js' || ext === 'jsx' || ext === 'mjs' || ext === 'cjs') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#F7DF1E" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="#000">JS</text>
+      </svg>
+    );
+  }
+
+  // Python
+  if (ext === 'py' || ext === 'pyw') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#3776AB" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="white">PY</text>
+      </svg>
+    );
+  }
+
+  // Rust
+  if (ext === 'rs') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#CE422B" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="white">RS</text>
+      </svg>
+    );
+  }
+
+  // Go
+  if (ext === 'go') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#00ADD8" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="white">GO</text>
+      </svg>
+    );
+  }
+
+  // Java
+  if (ext === 'java') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#007396" />
+        <text x="8" y="12" fontSize="9" fontWeight="600" textAnchor="middle" fill="white">JAVA</text>
+      </svg>
+    );
+  }
+
+  // C/C++
+  if (ext === 'c' || ext === 'h') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#A8B9CC" />
+        <text x="8" y="12" fontSize="11" fontWeight="700" textAnchor="middle" fill="#283593">C</text>
+      </svg>
+    );
+  }
+
+  if (ext === 'cpp' || ext === 'cc' || ext === 'cxx' || ext === 'hpp') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#00599C" />
+        <text x="8" y="12" fontSize="9" fontWeight="600" textAnchor="middle" fill="white">C++</text>
+      </svg>
+    );
+  }
+
+  // C#
+  if (ext === 'cs') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#239120" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="white">C#</text>
+      </svg>
+    );
+  }
+
+  // Ruby
+  if (ext === 'rb') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#CC342D" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="white">RB</text>
+      </svg>
+    );
+  }
+
+  // PHP
+  if (ext === 'php') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#777BB4" />
+        <text x="8" y="12" fontSize="9" fontWeight="600" textAnchor="middle" fill="white">PHP</text>
+      </svg>
+    );
+  }
+
+  // Swift
+  if (ext === 'swift') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#FA7343" />
+        <text x="8" y="12" fontSize="8" fontWeight="600" textAnchor="middle" fill="white">SWIFT</text>
+      </svg>
+    );
+  }
+
+  // Kotlin
+  if (ext === 'kt' || ext === 'kts') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#7F52FF" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="white">KT</text>
+      </svg>
+    );
+  }
+  
+  // Dart (Flutter)
+  if (ext === 'dart') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#0175C2"/>
+        <text x="8" y="12" fontSize="8" fontWeight="600" textAnchor="middle" fill="white">DART</text>
+      </svg>
+    );
+  }
+  
+  // Electron config
+  if (filename === 'electron.js' || filename === 'electron.config.js' || filename === 'forge.config.js') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#47848F"/>
+        <circle cx="8" cy="8" r="2" fill="white"/>
+        <circle cx="5" cy="5" r="1" fill="white"/>
+        <circle cx="11" cy="5" r="1" fill="white"/>
+      </svg>
+    );
+  }
+  
+  // Vue
+  if (ext === 'vue') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#42B883"/>
+        <text x="8" y="12" fontSize="9" fontWeight="600" textAnchor="middle" fill="white">VUE</text>
+      </svg>
+    );
+  }
+
+  // JSON
+  if (ext === 'json') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#F5C244" />
+        <path d="M5 4h1v1h-1zm2 0h1v1h-1zm-2 2h1v1h-1zm2 0h1v1h-1z" fill="#2E2E2E" />
+        <path d="M10 4h2v1h-2zm0 2h1v1h-1zm0 2h2v1h-2z" fill="#2E2E2E" />
+      </svg>
+    );
+  }
+
+  // YAML
+  if (ext === 'yaml' || ext === 'yml') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#CB171E" />
+        <text x="8" y="12" fontSize="8" fontWeight="600" textAnchor="middle" fill="white">YAML</text>
+      </svg>
+    );
+  }
+
+  // SQL
+  if (ext === 'sql') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#E38C00" />
+        <text x="8" y="12" fontSize="9" fontWeight="600" textAnchor="middle" fill="white">SQL</text>
+      </svg>
+    );
+  }
+
+  // Shell scripts
+  if (ext === 'sh' || ext === 'bash' || ext === 'zsh') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#4EAA25" />
+        <text x="8" y="12" fontSize="10" fontWeight="600" textAnchor="middle" fill="white">SH</text>
+      </svg>
+    );
+  }
+
+  // CSS
+  if (ext === 'css' || ext === 'scss' || ext === 'sass' || ext === 'less') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#1572B6" />
+        <path d="M4 4h8l-.5 8-3.5 1-3.5-1z" fill="white" opacity="0.9" />
+      </svg>
+    );
+  }
+
+  // HTML
+  if (ext === 'html' || ext === 'htm') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#E34F26" />
+        <path d="M4 3l.5 10 3.5 1 3.5-1 .5-10z" fill="white" opacity="0.9" />
+      </svg>
+    );
+  }
+
+  // Markdown
+  if (ext === 'md') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#519ABA" />
+        <text x="8" y="12" fontSize="9" fontWeight="600" textAnchor="middle" fill="white">MD</text>
+      </svg>
+    );
+  }
+
+  // XML
+  if (ext === 'xml') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#E37933" />
+        <text x="8" y="12" fontSize="9" fontWeight="600" textAnchor="middle" fill="white">XML</text>
+      </svg>
+    );
+  }
+
+  // SVG
+  if (ext === 'svg') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#FFB13B" />
+        <text x="8" y="12" fontSize="9" fontWeight="600" textAnchor="middle" fill="white">SVG</text>
+      </svg>
+    );
+  }
+
+  // Docker
+  if (filename === 'Dockerfile' || ext === 'dockerfile') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#2496ED" />
+        <rect x="4" y="6" width="2" height="2" fill="white" />
+        <rect x="7" y="6" width="2" height="2" fill="white" />
+        <rect x="10" y="6" width="2" height="2" fill="white" />
+      </svg>
+    );
+  }
+
+  // Images
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'bmp'].includes(ext || '')) {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="16" height="16" rx="2" fill="#A855F7" />
+        <rect x="3" y="3" width="10" height="8" rx="1" stroke="white" strokeWidth="1" fill="none" />
+        <circle cx="6" cy="6" r="1" fill="white" />
+        <path d="M3 9l3-2 2 1.5 3-2.5 2 2" stroke="white" strokeWidth="1" fill="none" />
+      </svg>
+    );
+  }
+
+  // Default file icon
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" opacity="0.5" style={{ flexShrink: 0 }}>
+      <path d="M3 2h7l3 3v9H3V2z" />
+      <path d="M10 2v3h3" stroke="currentColor" strokeWidth="0.5" fill="none" />
+    </svg>
+  );
+}
+
 export function FileTree({ projectId, onFileSelect, selectedPath }: FileTreeProps) {
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set(['/']));
@@ -224,10 +513,14 @@ export function FileTree({ projectId, onFileSelect, selectedPath }: FileTreeProp
         >
           <span style={{
             marginRight: 'var(--vf-space-2)',
-            fontSize: 'var(--vf-text-xs)',
-            opacity: 0.7
+            display: 'flex',
+            alignItems: 'center'
           }}>
-            {node.is_directory ? (isExpanded ? '▼' : '▶') : '📄'}
+            {node.is_directory ? (
+              <span style={{ fontSize: '10px', opacity: 0.7 }}>{isExpanded ? '▼' : '▶'}</span>
+            ) : (
+              <FileIcon filename={node.filename} />
+            )}
           </span>
           <span style={{
             fontFamily: 'var(--vf-font-mono)',

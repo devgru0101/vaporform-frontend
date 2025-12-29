@@ -1,0 +1,85 @@
+
+> vaporform-frontend@0.1.0 build
+> next build --turbopack
+
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Finished writing to disk in 12ms
+ ✓ Compiled successfully in 5.4s
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./app/debug-auth/page.tsx
+124:13  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+124:17  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+152:20  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+152:43  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+153:45  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+153:49  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+154:26  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+154:31  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+154:69  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./app/editor/[projectId]/page.tsx
+34:10  Warning: 'chatSessionId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+41:10  Warning: 'workspaceToken' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+42:10  Warning: 'workspacePort' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+872:35  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./components/BuildIndicator.tsx
+23:6  Warning: React Hook useEffect has a missing dependency: 'loadLatestBuild'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/BuildStatus.tsx
+34:40  Warning: 'projectId' is defined but never used.  @typescript-eslint/no-unused-vars
+47:6  Warning: React Hook useEffect has a missing dependency: 'loadBuildStatus'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/editor/FileTree.tsx
+3:52  Warning: 'useMemo' is defined but never used.  @typescript-eslint/no-unused-vars
+3:61  Warning: 'memo' is defined but never used.  @typescript-eslint/no-unused-vars
+26:64  Warning: 'path' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./components/editor/MonacoEditor.tsx
+3:10  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./components/git/GitPanel.tsx
+63:6  Warning: React Hook useEffect has missing dependencies: 'checkGitHubConnection', 'loadBranches', and 'loadCommits'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+105:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./components/project-wizard/ProjectCreationModal.tsx
+141:6  Warning: React Hook useEffect has a missing dependency: 'validateCurrentStep'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1426:9  Warning: 'renderGitHubImportStep' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+1594:22  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./components/project-wizard/github-import-steps.tsx
+222:65  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+222:70  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./components/project-wizard/steps/IntegrationsStep.tsx
+11:3  Warning: 'projectData' is defined but never used.  @typescript-eslint/no-unused-vars
+12:3  Warning: 'updateProjectData' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./components/project-wizard/steps/ProjectVisionStep.tsx
+29:6  Warning: React Hook useEffect has a missing dependency: 'updateProjectData'. Either include it or remove the dependency array. If 'updateProjectData' changes too often, find the parent component that defines it and wrap that definition in useCallback.  react-hooks/exhaustive-deps
+
+./components/settings/SettingsModal.tsx
+72:5  Warning: 'settings' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+104:6  Warning: React Hook useEffect has a missing dependency: 'handleClose'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/settings/sections/AiSection.tsx
+1:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any').
+2:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars').
+
+./components/terminal/AgentTerminalMode.tsx
+319:9  Warning: 'clearChat' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./lib/api.ts
+84:16  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./lib/contexts/SettingsContext.tsx
+1:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any').
+165:6  Warning: React Hook useEffect has a missing dependency: 'loadSettings'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

@@ -109,7 +109,7 @@ interface AgentTerminalModeProps {
 // Event Rendering Functions
 // ============================================================================
 
-function renderExecutionEvent(event: ExecutionEvent, index: number): JSX.Element {
+function renderExecutionEvent(event: ExecutionEvent, index: number): React.ReactNode {
   switch (event.type) {
     case 'command':
       return (
@@ -185,7 +185,7 @@ function renderExecutionEvent(event: ExecutionEvent, index: number): JSX.Element
           <div className="terminal-event-header terminal-event-header-search">
             <span className="terminal-event-icon">🔍</span>
             <span className="terminal-event-label">SEARCH</span>
-            <span className="terminal-search-query">"{event.data.query}"</span>
+            <span className="terminal-search-query">&quot;{event.data.query}&quot;</span>
           </div>
           {event.data.results.length > 0 ? (
             <div className="terminal-search-results">
@@ -347,10 +347,10 @@ export function AgentTerminalMode({ projectId, workspaceId, agentMode = 'termina
             <div className="terminal-agent-suggestions">
               <p className="terminal-agent-suggestions-title">Try asking:</p>
               <ul className="terminal-agent-suggestions-list">
-                <li>"List all JavaScript files in the src directory"</li>
-                <li>"Show me the contents of package.json"</li>
-                <li>"Run npm test and tell me what failed"</li>
-                <li>"Find all files that import from 'react'"</li>
+                <li>&quot;List all JavaScript files in the src directory&quot;</li>
+                <li>&quot;Show me the contents of package.json&quot;</li>
+                <li>&quot;Run npm test and tell me what failed&quot;</li>
+                <li>&quot;Find all files that import from &apos;react&apos;&quot;</li>
               </ul>
             </div>
           </div>

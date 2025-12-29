@@ -40,7 +40,7 @@ export const ProjectVisionStep: React.FC<ProjectVisionStepProps> = ({
   };
 
   const removeGoal = (index: number) => {
-    handleChange('projectGoals', formData.projectGoals.filter((_, i) => i !== index));
+    handleChange('projectGoals', formData.projectGoals.filter((_: any, i: number) => i !== index));
   };
 
   return (
