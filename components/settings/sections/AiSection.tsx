@@ -1,17 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSettings } from '@/lib/contexts/SettingsContext';
+import { useToast } from '@/lib/contexts/ToastContext';
 import { api } from '@/lib/api';
+import type { OpenRouterModel } from '@/lib/types/project';
+
+// Expected origin for OAuth callbacks - should match your API URL
+const OAUTH_EXPECTED_ORIGIN = process.env.NEXT_PUBLIC_API_URL || '';
 
 export const AiSection: React.FC = () => {
   const { settings, updateSettings } = useSettings();
+  const { showError } = useToast();
   const [showApiKey, setShowApiKey] = useState(false);
   const [authMethod, setAuthMethod] = useState<'api_key' | 'oauth'>('api_key');
   const [isConnectingOAuth, setIsConnectingOAuth] = useState(false);
-  const [openRouterModels, setOpenRouterModels] = useState<any[]>([]);
+  const [openRouterModels, setOpenRouterModels] = useState<OpenRouterModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
 
   // Handle provider change - clear API key when switching providers
@@ -25,24 +29,25 @@ export const AiSection: React.FC = () => {
     });
   };
 
+  const loadOpenRouterModels = useCallback(async () => {
+    try {
+      setLoadingModels(true);
+      const models = await api.getOpenRouterModels();
+      setOpenRouterModels(models as OpenRouterModel[]);
+    } catch (error) {
+      console.error('Failed to load OpenRouter models:', error);
+      showError('Failed to load OpenRouter models');
+    } finally {
+      setLoadingModels(false);
+    }
+  }, [showError]);
+
   // Load OpenRouter models when provider is set to openrouter
   useEffect(() => {
     if (settings.aiProvider === 'openrouter') {
       loadOpenRouterModels();
     }
-  }, [settings.aiProvider]);
-
-  const loadOpenRouterModels = async () => {
-    try {
-      setLoadingModels(true);
-      const models = await api.getOpenRouterModels();
-      setOpenRouterModels(models);
-    } catch (error) {
-      console.error('Failed to load OpenRouter models:', error);
-    } finally {
-      setLoadingModels(false);
-    }
-  };
+  }, [settings.aiProvider, loadOpenRouterModels]);
 
   const handleClaudeOAuthConnect = async () => {
     setIsConnectingOAuth(true);
@@ -59,8 +64,15 @@ export const AiSection: React.FC = () => {
         `width=${width},height=${height},left=${left},top=${top}`
       );
 
-      // Listen for OAuth callback
+      // Listen for OAuth callback with origin validation
       const handleMessage = (event: MessageEvent) => {
+        // Security: Verify the message origin matches our expected API URL
+        const expectedOrigin = OAUTH_EXPECTED_ORIGIN ? new URL(OAUTH_EXPECTED_ORIGIN).origin : '';
+        if (expectedOrigin && event.origin !== expectedOrigin) {
+          console.warn('[OAuth] Ignoring message from unexpected origin:', event.origin);
+          return;
+        }
+
         if (event.data.type === 'claude_oauth_success') {
           updateSettings({
             aiOAuthToken: event.data.token,
@@ -74,7 +86,7 @@ export const AiSection: React.FC = () => {
           popup?.close();
           window.removeEventListener('message', handleMessage);
           setIsConnectingOAuth(false);
-          alert('Failed to connect Claude account. Please try again.');
+          showError('Failed to connect Claude account. Please try again.');
         }
       };
 
@@ -91,7 +103,7 @@ export const AiSection: React.FC = () => {
     } catch (error) {
       console.error('OAuth error:', error);
       setIsConnectingOAuth(false);
-      alert('Failed to connect Claude account. Please try again.');
+      showError('Failed to connect Claude account. Please try again.');
     }
   };
 

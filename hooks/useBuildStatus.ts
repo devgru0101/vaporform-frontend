@@ -1,121 +1,109 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
+import type { BuildStatus, BuildEvent } from '@/lib/types/project';
 
-export interface BuildStatus {
-  id: string;
-  project_id: string;
-  workspace_id: string;
-  status: 'pending' | 'building' | 'success' | 'failed';
-  phase: 'pending' | 'setup' | 'install' | 'build' | 'test' | 'deploy' | 'complete' | 'failed';
-  current_step?: string;
-  total_steps?: number;
-  install_logs?: string;
-  build_logs?: string;
-  live_output?: string;
-  error_message?: string;
-  duration_ms?: number;
-  metadata?: any;
-  started_at?: Date;
-  completed_at?: Date;
-  created_at: Date;
+export type { BuildStatus, BuildEvent };
+
+interface UseBuildStatusResult {
+  currentBuild: BuildStatus | null;
+  buildEvents: BuildEvent[];
+  isBuilding: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
 }
 
-export interface BuildEvent {
-  id: string;
-  build_id: string;
-  event_type: 'phase_change' | 'log' | 'error' | 'warning' | 'progress';
-  phase?: string;
-  message?: string;
-  metadata?: any;
-  timestamp: Date;
-}
+// Maximum age of failed builds to show (5 minutes)
+const MAX_BUILD_AGE_MS = 5 * 60 * 1000;
+// Polling interval in milliseconds
+const POLL_INTERVAL_MS = 3000;
 
-export function useBuildStatus(projectId: string) {
+export function useBuildStatus(projectId: string): UseBuildStatusResult {
   const [currentBuild, setCurrentBuild] = useState<BuildStatus | null>(null);
   const [buildEvents, setBuildEvents] = useState<BuildEvent[]>([]);
   const [isBuilding, setIsBuilding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let pollInterval: NodeJS.Timeout;
-    let isActive = true;
+  // Use ref for tracking if component is mounted
+  const isMountedRef = useRef(true);
 
-    async function pollBuildStatus() {
-      if (!isActive || !projectId) return;
+  const pollBuildStatus = useCallback(async () => {
+    if (!isMountedRef.current || !projectId) return;
 
-      try {
-        // Get latest build for project
-        const builds = await api.listBuilds(projectId, 1);
+    try {
+      // Get latest build for project
+      const builds = await api.listBuilds(projectId, 1);
 
-        if (builds.length === 0) {
-          setCurrentBuild(null);
-          setIsBuilding(false);
-          setBuildEvents([]);
-          setError(null);
-          return;
-        }
+      if (!isMountedRef.current) return;
 
-        const build = builds[0];
-
-        // Only show recent builds (last 5 minutes) to prevent stale errors from showing
-        const buildAge = Date.now() - new Date(build.created_at).getTime();
-        const MAX_BUILD_AGE_MS = 5 * 60 * 1000; // 5 minutes
-
-        if (buildAge > MAX_BUILD_AGE_MS && build.status === 'failed') {
-          // Don't show old failed builds
-          setCurrentBuild(null);
-          setIsBuilding(false);
-          setBuildEvents([]);
-          setError(null);
-          return;
-        }
-
-        setCurrentBuild(build);
-
-        const building = build.status === 'building' || build.status === 'pending';
-        setIsBuilding(building);
-
-        // If building, fetch events for real-time progress
-        if (building) {
-          try {
-            const events = await api.getBuildEvents(build.id, 20);
-            setBuildEvents(events);
-          } catch (eventError: any) {
-            console.error('[useBuildStatus] Failed to fetch build events:', eventError);
-          }
-        } else {
-          // Build is complete or failed, fetch final events
-          try {
-            const events = await api.getBuildEvents(build.id, 20);
-            setBuildEvents(events);
-          } catch (eventError: any) {
-            console.error('[useBuildStatus] Failed to fetch build events:', eventError);
-          }
-        }
-
+      if (builds.length === 0) {
+        setCurrentBuild(null);
+        setIsBuilding(false);
+        setBuildEvents([]);
         setError(null);
-      } catch (err: any) {
-        console.error('[useBuildStatus] Failed to poll build status:', err);
-        setError(err.message);
+        return;
       }
+
+      const build = builds[0] as BuildStatus;
+
+      // Only show recent builds (last 5 minutes) to prevent stale errors from showing
+      const buildAge = Date.now() - new Date(build.created_at).getTime();
+
+      if (buildAge > MAX_BUILD_AGE_MS && build.status === 'failed') {
+        // Don't show old failed builds
+        setCurrentBuild(null);
+        setIsBuilding(false);
+        setBuildEvents([]);
+        setError(null);
+        return;
+      }
+
+      setCurrentBuild(build);
+
+      const building = build.status === 'building' || build.status === 'pending';
+      setIsBuilding(building);
+
+      // Fetch events for build progress/history
+      try {
+        const events = await api.getBuildEvents(build.id, 20) as BuildEvent[];
+        if (isMountedRef.current) {
+          setBuildEvents(events);
+        }
+      } catch (eventError) {
+        console.error('[useBuildStatus] Failed to fetch build events:', eventError);
+      }
+
+      setError(null);
+    } catch (err) {
+      if (!isMountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[useBuildStatus] Failed to poll build status:', err);
+      setError(errorMessage);
     }
+  }, [projectId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    let pollInterval: NodeJS.Timeout | undefined;
 
     // Initial poll
     pollBuildStatus();
 
     // Poll every 3 seconds
-    pollInterval = setInterval(pollBuildStatus, 3000);
+    pollInterval = setInterval(pollBuildStatus, POLL_INTERVAL_MS);
 
     return () => {
-      isActive = false;
-      clearInterval(pollInterval);
+      isMountedRef.current = false;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
     };
-  }, [projectId]);
+  }, [pollBuildStatus]);
 
   return {
     currentBuild,
     buildEvents,
     isBuilding,
-    error
+    error,
+    refresh: pollBuildStatus
   };
 }

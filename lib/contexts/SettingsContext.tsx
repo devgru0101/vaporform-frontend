@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/contexts/ToastContext';
@@ -109,6 +107,23 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+// Helper to extract error message from unknown error types
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  if (error && typeof error === 'object' && 'error' in error) {
+    return String((error as { error: unknown }).error);
+  }
+  return 'Unknown error';
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, getToken, userId } = useAuth();
   const { showToast, showError } = useToast();
@@ -144,8 +159,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           }
 
           return token;
-        } catch (error) {
-          console.error('[SettingsContext] Error getting token:', error);
+        } catch (err) {
+          console.error('[SettingsContext] Error getting token:', err);
           showError('Failed to get authentication token.');
           return null;
         }
@@ -157,12 +172,56 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [getToken, isLoaded, isSignedIn, showError]);
 
+  const loadSettings = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      // Try to load from backend API
+      try {
+        const response = await api.getUserSettings();
+        if (response.settings) {
+          // Normalize settings to ensure consistent field presence
+          const normalizedSettings: UserSettings = {
+            ...defaultSettings,
+            ...response.settings,
+          };
+          console.log('[SettingsContext] Loaded settings from API:', normalizedSettings);
+          setSettings(normalizedSettings);
+          setSavedSettings(normalizedSettings);
+          // Save non-sensitive settings to localStorage as backup (user-specific key)
+          const { aiApiKey: _key, aiOAuthToken: _token, ...nonSensitiveSettings } = normalizedSettings;
+          const storageKey = userId ? `vaporform_settings_${userId}` : 'vaporform_settings';
+          localStorage.setItem(storageKey, JSON.stringify(nonSensitiveSettings));
+          return;
+        }
+      } catch (apiErr) {
+        console.warn('Failed to load settings from API, trying localStorage:', apiErr);
+      }
+
+      // Fallback to localStorage if API fails (won't include sensitive fields)
+      // Use user-specific key to prevent cross-user data leakage
+      const storageKey = userId ? `vaporform_settings_${userId}` : 'vaporform_settings';
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Partial<UserSettings>;
+        const normalizedSettings: UserSettings = { ...defaultSettings, ...parsed };
+        setSettings(normalizedSettings);
+        setSavedSettings(normalizedSettings);
+      }
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+      setError('Failed to load settings');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
   // Load settings on mount
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       loadSettings();
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, loadSettings]);
 
   // Check for unsaved changes
   useEffect(() => {
@@ -175,60 +234,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setHasUnsavedChanges(hasChanges);
   }, [settings, savedSettings]);
 
-  const loadSettings = async () => {
-    try {
-      setIsLoading(true);
-
-      // Try to load from backend API
-      try {
-        const response = await api.getUserSettings();
-        if (response.settings) {
-          // Normalize settings to ensure consistent field presence
-          const normalizedSettings = {
-            ...defaultSettings,
-            ...response.settings,
-          };
-          console.log('[SettingsContext] Loaded settings from API:', normalizedSettings);
-          setSettings(normalizedSettings);
-          setSavedSettings(normalizedSettings);
-          // Save non-sensitive settings to localStorage as backup (user-specific key)
-          const { aiApiKey, aiOAuthToken, ...nonSensitiveSettings } = normalizedSettings;
-          const storageKey = userId ? `vaporform_settings_${userId}` : 'vaporform_settings';
-          localStorage.setItem(storageKey, JSON.stringify(nonSensitiveSettings));
-          return;
-        }
-      } catch (apiErr: any) {
-        console.warn('Failed to load settings from API, trying localStorage:', apiErr);
-      }
-
-      // Fallback to localStorage if API fails (won't include sensitive fields)
-      // Use user-specific key to prevent cross-user data leakage
-      const storageKey = userId ? `vaporform_settings_${userId}` : 'vaporform_settings';
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const normalizedSettings = { ...defaultSettings, ...parsed };
-        setSettings(normalizedSettings);
-        setSavedSettings(normalizedSettings);
-      }
-    } catch (err: any) {
-      console.error('Failed to load settings:', err);
-      setError('Failed to load settings');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateSettings = (updates: Partial<UserSettings>) => {
+  const updateSettings = useCallback((updates: Partial<UserSettings>) => {
     console.log('[SettingsContext] updateSettings called with:', updates);
     setSettings(prev => {
       const newSettings = { ...prev, ...updates };
       console.log('[SettingsContext] New settings:', newSettings);
       return newSettings;
     });
-  };
+  }, []);
 
-  const saveSettings = async () => {
+  const saveSettings = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -242,7 +257,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
       // Prepare settings for backend - only include sensitive fields if they have actual values
       // This prevents accidentally deleting keys from backend when they're not in localStorage
-      const settingsToSend = { ...settings };
+      const settingsToSend: Partial<UserSettings> = { ...settings };
       if (!aiApiKey || aiApiKey.trim().length === 0) {
         delete settingsToSend.aiApiKey;
       }
@@ -259,7 +274,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
         if (response.settings) {
           // Normalize response settings to match current settings structure
-          const normalizedSavedSettings = {
+          const normalizedSavedSettings: UserSettings = {
             ...defaultSettings,
             ...response.settings,
           };
@@ -268,19 +283,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         } else {
           setSavedSettings(settings);
         }
-      } catch (apiErr: any) {
+      } catch (apiErr) {
         console.error('Failed to save settings to API:', apiErr);
 
         // Parse error message from backend
-        let errorMessage = 'Failed to save settings to server.';
-
-        if (apiErr.message) {
-          errorMessage = apiErr.message;
-        } else if (typeof apiErr === 'string') {
-          errorMessage = apiErr;
-        } else if (apiErr.error) {
-          errorMessage = apiErr.error;
-        }
+        let errorMessage = getErrorMessage(apiErr);
 
         // Check for network errors
         if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
@@ -294,7 +301,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }
 
       setHasUnsavedChanges(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to save settings:', err);
       if (!error) {
         setError('Failed to save settings. Please try again.');
@@ -303,9 +310,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [settings, userId, error]);
 
-  const resetSettings = async () => {
+  const resetSettings = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -314,8 +321,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       try {
         const response = await api.resetUserSettings();
         if (response.settings) {
-          setSettings(response.settings);
-          setSavedSettings(response.settings);
+          setSettings(response.settings as UserSettings);
+          setSavedSettings(response.settings as UserSettings);
           const storageKey = userId ? `vaporform_settings_${userId}` : 'vaporform_settings';
           localStorage.setItem(storageKey, JSON.stringify(response.settings));
         } else {
@@ -324,7 +331,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           const storageKey = userId ? `vaporform_settings_${userId}` : 'vaporform_settings';
           localStorage.removeItem(storageKey);
         }
-      } catch (apiErr: any) {
+      } catch (apiErr) {
         console.error('Failed to reset settings in API:', apiErr);
         // Reset locally anyway
         setSettings(defaultSettings);
@@ -334,24 +341,24 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }
 
       setHasUnsavedChanges(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to reset settings:', err);
       setError('Failed to reset settings');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
-  const openModal = () => {
+  const openModal = useCallback(() => {
     // Guard: only open modal if user is authenticated
     if (!isSignedIn) {
       showError('Please sign in to access settings');
       return;
     }
     setIsModalOpen(true);
-  };
+  }, [isSignedIn, showError]);
 
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = useCallback(() => setIsModalOpen(false), []);
 
   return (
     <SettingsContext.Provider

@@ -6,6 +6,7 @@ import { APIProvider } from '@/lib/contexts/APIProvider';
 import { SettingsProvider } from '@/lib/contexts/SettingsContext';
 import { ToastProvider } from '@/lib/contexts/ToastContext';
 import { SettingsModal } from '@/components/settings/SettingsModal';
+import { ErrorBoundary } from '@/components/shared';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,7 +37,9 @@ export default function RootLayout({
               <body
                 className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-black text-white`}
               >
-                {children}
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
                 <SettingsModal />
               </body>
             </html>

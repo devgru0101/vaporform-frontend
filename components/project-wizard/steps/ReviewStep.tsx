@@ -1,9 +1,15 @@
 'use client';
 
 import React from 'react';
+import type { ProjectVision, TechStack } from '@/lib/types/project';
+import { Spinner } from '@/components/shared';
 
+// Props match ProjectCreationModal's internal data structure
 interface ReviewStepProps {
-  projectData: any;
+  projectData: {
+    vision: ProjectVision;
+    techStack: TechStack;
+  };
   onGenerate: () => void;
   isGenerating: boolean;
 }
@@ -20,27 +26,41 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
         Review your project configuration
       </p>
 
-      <div className="vf-review-section">
+      <div className="vf-review-section" role="region" aria-label="Project overview">
         <h4>PROJECT OVERVIEW</h4>
-        <div className="vf-review-item">
-          <strong>Name:</strong> {projectData.vision?.name}
-        </div>
-        <div className="vf-review-item">
-          <strong>Description:</strong> {projectData.vision?.description}
-        </div>
-        <div className="vf-review-item">
-          <strong>Tech Stack:</strong> {projectData.techStack?.selectedTemplate}
-        </div>
+        <dl className="vf-review-list">
+          <div className="vf-review-item">
+            <dt>Name:</dt>
+            <dd>{projectData.vision?.name || 'Not specified'}</dd>
+          </div>
+          <div className="vf-review-item">
+            <dt>Description:</dt>
+            <dd>{projectData.vision?.description || 'Not specified'}</dd>
+          </div>
+          <div className="vf-review-item">
+            <dt>Tech Stack:</dt>
+            <dd>{projectData.techStack?.selectedTemplate || 'Not selected'}</dd>
+          </div>
+        </dl>
       </div>
 
       <div className="vf-review-cta">
         <p>Ready to generate your project?</p>
         <button
+          type="button"
           onClick={onGenerate}
           disabled={isGenerating}
           className="vf-btn vf-btn-primary vf-btn-large"
+          aria-busy={isGenerating}
         >
-          {isGenerating ? 'GENERATING...' : '✨ GENERATE MY PROJECT'}
+          {isGenerating ? (
+            <>
+              <Spinner size="sm" />
+              <span>GENERATING...</span>
+            </>
+          ) : (
+            'GENERATE MY PROJECT'
+          )}
         </button>
       </div>
     </div>

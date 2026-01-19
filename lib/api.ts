@@ -295,50 +295,6 @@ export class VaporformAPI {
     return response.json();
   }
 
-  async createCommit(projectId: string, message: string, files?: string[]) {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}/git/commit`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ projectId, message, files }),
-    });
-    return response.json();
-  }
-
-  async getHistory(projectId: string, limit: number = 50) {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}/git/history/${projectId}?limit=${limit}`, {
-      headers,
-    });
-    return response.json();
-  }
-
-  async listBranches(projectId: string) {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}/git/branches/${projectId}`, { headers });
-    return response.json();
-  }
-
-  async createBranch(projectId: string, branchName: string, fromCommit?: string) {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}/git/branch`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ projectId, branchName, fromCommit }),
-    });
-    return response.json();
-  }
-
-  async checkoutBranch(projectId: string, branchName: string) {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}/git/checkout`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ projectId, branchName }),
-    });
-    return response.json();
-  }
-
   // GitHub Integration
   async getGitHubConnection(projectId: string) {
     const headers = await this.getAuthHeaders();
@@ -808,7 +764,7 @@ export class VaporformAPI {
 
   async createBranch(projectId: string, branchName: string): Promise<{ success: boolean }> {
     const headers = await this.getAuthHeaders();
-    const response = await this.fetchWith ErrorHandling(`${API_URL}/git/branch`, {
+    const response = await this.fetchWithErrorHandling(`${API_URL}/git/branch`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ projectId, branchName }),
